@@ -1,0 +1,5 @@
+# Project exclude paths
+/.gradle/
+/build/
+/build/js/packages/simpthree/kotlin/
+/build/js/packages/simpthree-test/kotlin/
