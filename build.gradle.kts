@@ -8,6 +8,7 @@ version = "1.0-SNAPSHOT"
 repositories {
     maven { setUrl("https://dl.bintray.com/kotlin/kotlin-eap") }
     maven("https://kotlin.bintray.com/kotlin-js-wrappers/")
+    maven { setUrl("https://dl.bintray.com/danfma/kotlin-kodando") }
     mavenCentral()
     jcenter()
 }

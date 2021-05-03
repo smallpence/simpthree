@@ -10,7 +10,9 @@ class App : RComponent<RProps, RState>() {
             + "SIMP III"
         }
 
-        simpCanvas { }
+        simpCanvas {
+            fileSize = FileSize(100,100)
+            displaySize = DisplaySize(800,800)
+        }
     }
-
 }
