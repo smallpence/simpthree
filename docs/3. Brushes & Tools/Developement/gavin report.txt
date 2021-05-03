@@ -1,0 +1,11 @@
+colour picker stupid:
+	holding button doesn't show new colour
+	picker area bad look at GIMP
+	releasing button when off grid does not update colour.
+	closing form necessary to change colour
+	can't close side panel
+
+zoom bar should have some form of numbers
+holding down then coming in doesn't draw
+
+oh yeah it crashed btw

@@ -1,0 +1,15 @@
+Basically this isn't usable as a drawing program
+
+-smallest brush size is way too big
+-hue of colour that user has selected is not saved so colours end up inconsistent
+-no eyedropper tool to at least compensate for this
+-no layers
+-no undo function or ctrl-z shortcut
+-no redo function or ctrl-shift-z shortcut
+-slow response times, not helpful if you want to draw smooth lines
+-no custom canvas size
+-no tablet compatibility
+	- pressure pen 
+
+:)
+please fix thanks 

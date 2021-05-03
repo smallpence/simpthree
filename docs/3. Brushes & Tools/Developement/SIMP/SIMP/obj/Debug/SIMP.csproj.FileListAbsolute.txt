@@ -1,0 +1,34 @@
+\\kes4601-19-fsvr\user\13 intake\13SYoung\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.csprojResolveAssemblyReference.cache
+\\kes4601-19-fsvr\user\13 intake\13SYoung\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.MainForm.resources
+\\kes4601-19-fsvr\user\13 intake\13SYoung\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.csproj.GenerateResource.Cache
+\\kes4601-19-fsvr\user\13 intake\13SYoung\Computing\# Project\2. Framework\Developement\SIMP\SIMP\bin\Debug\SIMP.exe
+\\kes4601-19-fsvr\user\13 intake\13SYoung\Computing\# Project\2. Framework\Developement\SIMP\SIMP\bin\Debug\SIMP.pdb
+\\kes4601-19-fsvr\user\13 intake\13SYoung\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.exe
+\\kes4601-19-fsvr\user\13 intake\13SYoung\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.pdb
+G:\Computing\# Project\2. Framework\Developement\SIMP\SIMP\bin\Debug\SIMP.exe
+G:\Computing\# Project\2. Framework\Developement\SIMP\SIMP\bin\Debug\SIMP.pdb
+G:\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.csprojResolveAssemblyReference.cache
+G:\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.MainForm.resources
+G:\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.Workspace.resources
+G:\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.csproj.GenerateResource.Cache
+G:\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.exe
+G:\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.pdb
+\\kes4601-19-fsvr\user\13 intake\13SYoung\Computing\# Project\2. Framework\Developement\SIMP\SIMP\obj\Debug\SIMP.Workspace.resources
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\bin\Debug\SIMP.exe
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\bin\Debug\SIMP.pdb
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.csprojResolveAssemblyReference.cache
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.MainForm.resources
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.Workspace.resources
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.csproj.GenerateResource.Cache
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.exe
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.pdb
+G:\Computing\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.RGBPicker.resources
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\bin\Debug\SIMP.exe
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\bin\Debug\SIMP.pdb
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.csprojResolveAssemblyReference.cache
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.MainForm.resources
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.RGBPicker.resources
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.Workspace.resources
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.csproj.GenerateResource.Cache
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.exe
+C:\Users\Sammy\Documents\Project\16 11 2019\# Project\3. Brushes & Tools\Developement\SIMP\SIMP\obj\Debug\SIMP.pdb

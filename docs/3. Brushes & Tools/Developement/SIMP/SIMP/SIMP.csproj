@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <ProjectGuid>{8CC0E772-3F83-42B0-AB26-410B06A9055D}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>SIMP</RootNamespace>
+    <AssemblyName>SIMP</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <DebugSymbols>False</DebugSymbols>
+    <DebugType>None</DebugType>
+    <Optimize>True</Optimize>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Actions\IAction.cs" />
+    <Compile Include="Actions\PixelAction.cs" />
+    <Compile Include="EAxis.cs" />
+    <Compile Include="EAxisMode.cs" />
+    <Compile Include="Layer.cs" />
+    <Compile Include="Properties\ColorProperty.cs" />
+    <Compile Include="Properties\DecimalProperty.cs" />
+    <Compile Include="Properties\EPropetyType.cs" />
+    <Compile Include="Properties\IProperty.cs" />
+    <Compile Include="Properties\NumericalProperty.cs" />
+    <Compile Include="RGBPicker.cs" />
+    <Compile Include="RGBPicker.Designer.cs">
+      <DependentUpon>RGBPicker.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Shapes\DisplayPoint.cs" />
+    <Compile Include="Shapes\DisplayRectangle.cs" />
+    <Compile Include="Shapes\FilePoint.cs" />
+    <Compile Include="Shapes\FileRectangle.cs" />
+    <Compile Include="Shapes\IPicturePoint.cs" />
+    <Compile Include="Shapes\IPictureRectangle.cs" />
+    <Compile Include="SimpConstants.cs" />
+    <Compile Include="Image.cs" />
+    <Compile Include="MainForm.cs" />
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Propertiess\AssemblyInfo.cs" />
+    <Compile Include="SimpException.cs" />
+    <Compile Include="Tools\BlankTool.cs" />
+    <Compile Include="Tools\EraserTool.cs" />
+    <Compile Include="Tools\ITool.cs" />
+    <Compile Include="Tools\LineTool.cs" />
+    <Compile Include="Tools\ShapeTools\CircleTool.cs" />
+    <Compile Include="Tools\ShapeTools\DiamondTool.cs" />
+    <Compile Include="Tools\ShapeTools\FillTool.cs" />
+    <Compile Include="Tools\ShapeTools\IPixelTool.cs" />
+    <Compile Include="Tools\ShapeTools\IShapeTool.cs" />
+    <Compile Include="Tools\ShapeTools\LineTool.cs" />
+    <Compile Include="Tools\ShapeTools\RectangleTool.cs" />
+    <Compile Include="Tools\SinglePixelLineTool.cs" />
+    <Compile Include="Workspace.cs" />
+    <Compile Include="Workspace.Designer.cs">
+      <DependentUpon>Workspace.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ZoomSettings.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RGBPicker.resx">
+      <DependentUpon>RGBPicker.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Workspace.resx">
+      <DependentUpon>Workspace.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Actions" />
+    <Folder Include="Properties" />
+    <Folder Include="Tools" />
+    <Folder Include="Shapes" />
+    <Folder Include="Tools\ShapeTools" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

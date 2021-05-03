@@ -1,23 +1,36 @@
-import kotlinx.browser.document
-import kotlinx.css.px
-import kotlinx.html.canvas
+import kotlinx.css.*
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onMouseDownFunction
 import kotlinx.html.js.onMouseMoveFunction
 import kotlinx.html.js.onMouseUpFunction
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.RenderingContext
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.Event
 import react.*
-import react.dom.canvas
+import react.dom.div
+import styled.css
+import styled.styledCanvas
 
 class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
     var penDown: Boolean = false
 
     override fun RBuilder.render() {
-        canvas {
-            attrs.width = "100.px"
-            attrs.height = "100.px"
+        div {
+            + "x: ${state.x} y: ${state.y}"
+        }
+
+        styledCanvas {
+            css {
+                width = props.displaySize.width.px
+                height = props.displaySize.height.px
+                border = "1px solid #000000"
+                backgroundColor = Color.white
+                put("image-rendering","pixelated")
+                put("image-rendering","-moz-crisp-edges")
+                padding = "0"
+                margin = "0"
+            }
 
             attrs {
                 width = "${props.fileSize.width}px"
@@ -55,6 +68,11 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
             }
         }
 
+        div {
+            + "x: ${state.x} y: ${state.y}"
+        }
+    }
+}
 
 fun <T : HTMLElement,E : SyntheticEvent<T>> disectEvent(event: Event, handler: TargetAndEvent<T,E>.() -> Unit) {
     handler(TargetAndEvent(
@@ -78,7 +96,7 @@ external interface SimpCanvasState : RState {
     var y: Int
 }
 
-fun RBuilder.simpCanvas(handler: RProps.() -> Unit): ReactElement {
+fun RBuilder.simpCanvas(handler: SimpCanvasProps.() -> Unit): ReactElement {
     return child(SimpCanvas::class) {
         this.attrs(handler)
     }

@@ -1,0 +1,15 @@
+Did a 100 size brush on 50x50. Broke it for 5 min, then filled screen.
+Clicked top of colour selector and changed colour to red. 
+Can't input hex code =(
+Useless white bar on side of RGB picker
+Can open multiple workspaces. No copy paste.
+No tutorial or explanation
+don't start with a brush. No premade shape templates.
+No layers. ((((((((0)))))))) like shrek
+No pixelation
+no list of recent colours
+no rubber
+COLOUR SPELT WRONG
+Must draw on
+shift zoom should focus on cursor
+Example of thickness of brush

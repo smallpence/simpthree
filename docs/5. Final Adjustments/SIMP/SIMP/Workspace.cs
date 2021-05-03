@@ -1,0 +1,1104 @@
+﻿/*
+ * Created by SharpDevelop.
+ * User: 13syoung
+ * Date: 18/09/2019
+ * Time: 15:45
+ * 
+ * To change this template use Tools | Options | Coding | Edit Standard Headers.
+ */
+using System;
+using System.Drawing;
+using System.Windows.Forms;
+using System.Collections.Generic;
+using System.IO;
+using SIMP.Tools;
+using SIMP.Properties;
+using SIMP.Actions;
+using SIMP.Tools.ShapeTools;
+using SIMP;
+
+namespace SIMP
+{
+	/// <summary>
+	/// Description of WorkSpace.
+	/// </summary>
+	public partial class Workspace : Form
+	{
+		#region vars
+		public SIMP.Image image;
+		public int width, height;
+		public Form attachedForm;
+		public PictureBox displayBox;
+		public bool shiftPressed = false, controlPressed = false;
+		public List<ITool> tools;
+		public ITool currentTool;
+		public string savedName;
+		public bool savedOnDisk;
+		
+		private int _savedFormWidth, _savedFormHeight;
+		private int _updateCount = 0;
+		private int _leftPadding, _rightPadding, _topPadding, _bottomPadding;
+		private Stack<IAction> pastActions;
+		private Stack<IAction> futureActions;
+		private string _savedPath;
+		
+		public int leftPadding {
+			get {
+				return _leftPadding;
+			}
+			set {
+				// makes sure the minimum size of the form is updated if you change the padding
+				_leftPadding = value;
+				SetMinimumSize();
+			}
+		}
+		public int rightPadding {
+			get {
+				return _rightPadding;
+			}
+			set {
+				_rightPadding = value;
+				SetMinimumSize();
+			}
+		}
+		public int topPadding {
+			get {
+				return _topPadding;
+			}
+			set {
+				_topPadding = value;
+				SetMinimumSize();
+			}
+		}
+		public int bottomPadding {
+			get {
+				return _bottomPadding;
+			}
+			set {
+				_bottomPadding = value;
+				SetMinimumSize();
+			}
+		}
+		#endregion
+		
+		#region constructor
+		public Workspace()
+		{
+			InitializeComponent();
+			
+			Constructor(
+				SimpConstants.IMAGE_DEFAULT_WIDTH,
+				SimpConstants.IMAGE_DEFAULT_HEIGHT
+			);
+		}
+		
+		public Workspace(int width, int height) {
+			InitializeComponent();
+			
+			Constructor(width,height);
+		}
+		
+		private void Constructor(int width, int height) {
+			image = new SIMP.Image(width,height,this);
+			
+			// Stores itself casted as a form
+			attachedForm = (Form)this;
+			
+			// Defines levels of padding
+			leftPadding = SimpConstants.WORKSPACE_LEFT_PADDING;
+			rightPadding = SimpConstants.WORKSPACE_RIGHT_PADDING;
+			topPadding = SimpConstants.WORKSPACE_TOP_PADDING;
+			bottomPadding = SimpConstants.WORKSPACE_BOTTOM_PADDING;
+			
+			// Needs to gen controls on layer selector
+			GenLayersSelector();
+			
+			// Sets the dimensions of the workspace to the dimensions of the form
+			CalculateDimensions();
+			
+			// Updates the form
+			UpdateDisplayBox(true,true);
+			
+			// Adds scroll event
+			this.MouseWheel += new MouseEventHandler(WorkspaceMouseWheel);
+			
+			AddTools();
+			
+			// Adds buttons
+			int buttonY = 0;
+			currentTool = tools[0];
+			foreach (ITool tool in tools) {
+				Button newButton = new Button();
+				newButton.Size = new Size(24,24);
+				newButton.Location = new Point(0,buttonY);
+				newButton.Name = tool.name;
+				newButton.Click += new EventHandler(ToolButtonClick);
+				newButton.BackgroundImage = tool.icon;
+				newButton.BackgroundImageLayout = ImageLayout.Stretch;
+				newButton.BackColor = Color.White;
+				if (currentTool == tool) {
+					newButton.Enabled = false;
+				}
+				buttonY+=24;
+				
+				panTools.Controls.Add(newButton);
+			}
+			ShowTool();
+			
+			pastActions = new Stack<IAction>();
+			futureActions = new Stack<IAction>();
+			
+			// As this was just generated, has not yet been saved
+			savedName = "Unnamed";
+			savedOnDisk = false;
+		}
+		
+		private void AddTools() {
+			// Defines tools
+			tools = new List<ITool>();
+			
+			// predefined tools
+			tools.Add(new SIMP.Tools.LineTool("Brush","Simple Brush",this,btnPenIcon.BackgroundImage));
+			tools.Add(new SinglePixelLineTool("Pencil","Precise Brush",this,btnPencilIcon.BackgroundImage));
+			tools.Add(new EraserTool("Eraser","Rub Stuff Out",this,btnEraserIcon.BackgroundImage));
+			tools.Add(new SIMP.Tools.ShapeTools.LineTool("Line Tool","Draw a staight line",this,btnLineIcon.BackgroundImage));
+			tools.Add(new RectangleTool("Rectangle","Draws a rectangle",this,btnRectangleIcon.BackgroundImage));
+			tools.Add(new CircleTool("Circle","Draws a circle (or rectangle)",this,btnCircleIcon.BackgroundImage));
+			tools.Add(new DiamondTool("Diamond","Draws diamonds",this,btnDiamondIcon.BackgroundImage));
+			tools.Add(new FillTool("Fill","Fills a shape",this,btnFillIcon.BackgroundImage));
+			tools.Add(new FXTool("Special Effects","Apply cool changes to the image",this,btnFXIcon.BackgroundImage));
+		}
+		#endregion
+		
+		#region display
+		
+		/// <summary>
+		/// Resizes, Relocates and (if redraw) updates image in the displayBox
+		/// </summary>
+		/// <param name="redraw"></param>
+		public void UpdateDisplayBox(bool redraw, bool full) {
+			// Sets up the dimensions of displayBox
+			ResizeDisplayBox();
+			
+			// Relocates the picture box
+			RelocateDisplayBox();
+			
+			if (redraw) {
+				// Displays to the picture box
+				displayBox.Image = image.GetDisplayImage(displayBox.Width,displayBox.Height,full);
+			}
+			
+			// Updates the progress bars
+			UpdateBar(EAxis.X,barHorizontal);
+			UpdateBar(EAxis.Y,barVertical);
+			
+			_updateCount++;
+			
+			// after x amount of updates, garbage collect
+			// every time the picture box's image is changed, the old one is not disposed of
+			if (_updateCount >= SimpConstants.WORKSPACE_REFRESH_PERIOD) {
+				_updateCount = 0;
+				GC.Collect();
+			}
+		}
+		
+		/// <summary>
+		/// Updates the width and height of the displayBox
+		/// </summary>
+		private void ResizeDisplayBox() {
+			switch (CheckImageSize(EAxis.X)) {
+				// if the image is larger than form size
+				case EAxisMode.ImageTooLarge:
+					displayBox.Width = DisplayRectangle.Width - (leftPadding + rightPadding);
+					break;
+				// if the image is smaller than form size
+				case EAxisMode.ImageTooSmall:
+					displayBox.Width = image.displayWidth;
+					break;
+			}
+			
+			switch (CheckImageSize(EAxis.Y)) {
+				// if the image is larger than form size
+				case EAxisMode.ImageTooLarge:
+					displayBox.Height = DisplayRectangle.Height - (topPadding + bottomPadding);
+					break;
+				// if the image is smaller than form size
+				case EAxisMode.ImageTooSmall:
+					displayBox.Height = image.displayHeight;
+					break;
+			}
+		}
+		
+		/// <summary>
+		/// Updates the position of the displayBox
+		/// </summary>
+		private void RelocateDisplayBox() {
+			int X = 0;
+			int Y = 0;
+			switch (CheckImageSize(EAxis.X)) {
+				// if the image is larger than form size
+				case EAxisMode.ImageTooLarge:
+					X = leftPadding;
+					break;
+				// if the image is smaller than form size
+				case EAxisMode.ImageTooSmall:
+					X = ((width - image.displayWidth) / 2) + leftPadding;
+					break;
+			}
+			
+			switch (CheckImageSize(EAxis.Y)) {
+				// if the image is larger than form size
+				case EAxisMode.ImageTooLarge:
+					Y = topPadding;
+					break;
+				// if the image is smaller than form size
+				case EAxisMode.ImageTooSmall:
+					Y = ((height - image.displayHeight) / 2) + topPadding;
+					break;
+			}
+			displayBox.Location = new Point(X,Y);
+		}
+		
+		/// <summary>
+		/// Called when the heartbeat timer ticks
+		/// </summary>
+		private void HeartbeatTick(object sender, EventArgs e)
+		{
+			if (HasSizeChanged()) {
+				CalculateDimensions();
+				UpdateDisplayBox(true,true);
+			}
+		}
+		
+		/// <summary>
+		/// Calculates what the width and height of the Workspace should be
+		/// </summary>
+		private void CalculateDimensions() {
+			width = DisplayRectangle.Width - (leftPadding + rightPadding);
+			height = DisplayRectangle.Height - (topPadding + bottomPadding);
+		}
+		
+		private void WorkspaceResizeEnd(object sender, EventArgs e)
+		{
+			//UpdateDisplayBox(true);
+		}
+		
+		/// <summary>
+		/// If the form size is different to the last recorded ones
+		/// </summary>
+		/// <returns></returns>
+		private bool HasSizeChanged() {
+			// if width has changed
+			if (_savedFormWidth != DisplayRectangle.Width) {
+				_savedFormWidth = DisplayRectangle.Width;
+				return true;
+			}
+			
+			// if height has changed
+			if (_savedFormHeight != DisplayRectangle.Height) {
+				_savedFormHeight = DisplayRectangle.Height;
+				return true;
+			}
+			
+			return false;
+		}
+		
+		/// <summary>
+		/// Checks whether the image is smaller or larger than the form in this Axis
+		/// </summary>
+		/// <param name="axis">Axis to check in</param>
+		/// <returns></returns>
+		private EAxisMode CheckImageSize(EAxis axis) {
+			int axisSize;
+			int padding;
+			switch (axis) {
+				case EAxis.X:
+					// determines the max size of the relevent axis and the amount of padding to deduct
+					axisSize = DisplayRectangle.Width;
+					padding = leftPadding + rightPadding;
+					break;
+				case EAxis.Y:
+					axisSize = DisplayRectangle.Height;
+					padding = topPadding + bottomPadding;
+					break;
+				default:
+					throw new Exception("Invalid value for EAxis");
+			}
+			
+			// gets the display size of the relevent axis (taking zoom into account)
+			int imageAxisSize = image.ToDisplayRectangle().GetDisplaySize(axis);
+			
+			// if the size of form is bigger than the image's size plus padding
+			if (axisSize >= (imageAxisSize + padding)) {
+				// then the image is smaller than form
+				return EAxisMode.ImageTooSmall;
+			} else {
+				return EAxisMode.ImageTooLarge;
+			}
+		}
+		
+		private void SetMinimumSize() {
+			this.MinimumSize = new Size(_leftPadding + _rightPadding + SimpConstants.WINDOWS_RIGHT_BAR_WIDTH + SimpConstants.WINDOWS_LEFT_BAR_WIDTH + 100,
+			                            _topPadding + _bottomPadding + SimpConstants.WINDOWS_TOP_BAR_HEIGHT + SimpConstants.WINDOWS_BOTTOM_BAR_HEIGHT + 100);
+		}
+		
+		#endregion
+		
+		#region bars
+		
+		/// <summary>
+		/// When the Value of the Zoom bar changes
+		/// </summary>
+		void BarZoomScroll(object sender, EventArgs e)
+		{
+			image.zoomSettings.zoom = barZoom.Value;
+			
+			// everything changes when zoom changes so just redisplay everything
+			UpdateDisplayBox(true,true);
+		}
+		
+		private void UpdateBar(EAxis axis, ScrollBar bar) {
+			// checks whether this bar should be visible or not
+			// it might not be if there is nothing to scroll
+			SetBarVisiblity(axis,bar);
+			
+			image.SetBarValues(barHorizontal,barVertical);
+			
+		}
+		
+		private void SetBarVisiblity(EAxis axis, ScrollBar bar) {
+			switch (CheckImageSize(axis)) {
+				case EAxisMode.ImageTooLarge:
+					bar.Enabled = true;
+					break;
+				case EAxisMode.ImageTooSmall:
+					bar.Enabled = false;
+					break;
+			}
+		}
+		
+		void BarHorizontalValueChanged(object sender, EventArgs e)
+		{
+			image.CentreFromBar(barHorizontal.Value,EAxis.X);
+			UpdateDisplayBox(true,true);
+		}
+		
+		void BarVerticalValueChanged(object sender, EventArgs e)
+		{
+			image.CentreFromBar(barVertical.Value,EAxis.Y);
+			UpdateDisplayBox(true,true);
+		}
+		
+		#endregion
+		
+		#region mouse
+		
+		void DisplayBoxMouseDown(object sender, MouseEventArgs e)
+		{
+			// calls the handler of the current tool - the tool handles it from there
+			DisplayPoint clickLocation = new DisplayPoint(e.Location.X,e.Location.Y);
+			currentTool.HandleMouseDown(image.DisplayPointToFilePoint(clickLocation),e.Button);
+		}
+		
+		void DisplayBoxMouseUp(object sender, MouseEventArgs e)
+		{
+			DisplayPoint clickLocation = new DisplayPoint(e.Location.X,e.Location.Y);
+			currentTool.HandleMouseUp(image.DisplayPointToFilePoint(clickLocation),e.Button);
+		}
+		
+		// .net doesnt store the old location - guess I will instead
+		DisplayPoint oldLocation = new DisplayPoint(0,0);
+		void DisplayBoxMouseMove(object sender, MouseEventArgs e)
+		{
+			DisplayPoint newLocation = new DisplayPoint(e.Location.X,e.Location.Y);
+			currentTool.HandleMouseMove(image.DisplayPointToFilePoint(oldLocation),image.DisplayPointToFilePoint(newLocation));
+			
+			oldLocation = newLocation;
+		}
+		
+		void DisplayBoxClick(object sender, EventArgs e)
+		{
+			MouseEventArgs me = (MouseEventArgs)e;
+			DisplayPoint clickLocation = new DisplayPoint(me.Location.X,me.Location.Y);
+			currentTool.HandleMouseClick(image.DisplayPointToFilePoint(clickLocation),me.Button);
+		}
+
+		void WorkspaceMouseWheel(object sender, MouseEventArgs e)
+		{
+			// zoom scrolling
+			if (controlPressed) {
+				// if scrolled up
+				if (e.Delta > 0) {
+					if (barZoom.Value < barZoom.Maximum) {
+						barZoom.Value++;
+					}
+				} else {
+					if (barZoom.Value > barZoom.Minimum) {
+						barZoom.Value--;
+					}
+				}
+				BarZoomScroll(barZoom, new EventArgs());
+			}
+			
+			// horizontal bar scrolling
+			else if (shiftPressed) {
+				// if scrolled DOWN
+				if (e.Delta < 0) {
+					// makes sure not scrolling TOO far
+					if (barHorizontal.Value < barHorizontal.Maximum) {
+						barHorizontal.Value++;
+					}
+				} else {
+					if (barHorizontal.Value > barHorizontal.Minimum) {
+						barHorizontal.Value--;
+					}
+				}
+			}
+			
+			// vertical bar scrolling
+			else {
+				// if scrolled DOWN
+				if (e.Delta < 0) {
+					if (barVertical.Value < barVertical.Maximum) {
+						barVertical.Value++;
+					}
+				} else {
+					if (barVertical.Value > barVertical.Minimum) {
+						barVertical.Value--;
+					}
+				}
+			}
+		}
+		
+		/// <summary>
+		/// Not for any direct function, but records when keys like shift or alt are pressed or unpressed
+		/// </summary>
+		void WorkspaceKeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.Shift) {
+				shiftPressed = true;
+			}
+			if (e.Control) {
+				controlPressed = true;
+				
+				// though does make ctrl+Z undo and ctrl+Y redo
+				if (e.KeyCode == Keys.Z && btnUndo.Enabled) {
+					BtnUndoClick(null,null);
+				}
+				if (e.KeyCode == Keys.Y && btnRedo.Enabled) {
+					BtnRedoClick(null,null);
+				}
+			}
+		}
+		
+		void WorkspaceKeyUp(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.ShiftKey) {
+				shiftPressed = false;
+			}
+			if (e.KeyCode == Keys.ControlKey) {
+				controlPressed = false;
+			}
+		}
+		
+		#endregion
+		
+		#region tools
+		
+		void ToolButtonClick(object sender, EventArgs e) {
+			Button buttonSender = (Button)sender;
+			
+			// disables every button except for pressed one
+			foreach (Button button in panTools.Controls) {
+				button.Enabled = true;
+			}
+			buttonSender.Enabled = false;
+			
+			// selects the tool
+			foreach (ITool tool in tools) {
+				if (tool.name.Equals(buttonSender.Name)) {
+					currentTool = tool;
+				}
+			}
+			
+			// if no tool is selected - hide the tool menu
+			if (currentTool != ITool.BlankTool) {
+				ShowTool();
+			} else {
+				HideTool();
+			}
+			
+		}
+		
+		bool toolsOpen = false;
+		public void ShowTool() {
+			if (currentTool.name.Equals("Eyedropper")) { // never attempt to display eyedropper
+				return;
+			}
+			
+			leftPadding = SimpConstants.WORKSPACE_LEFT_PADDING + 200;
+			panToolProperties.Visible = true;
+			panToolProperties.Controls.Clear();
+			
+			Label lblToolName = new Label();
+			lblToolName.Location = new Point(0, 0);
+			lblToolName.Size = new Size(191, 23);
+			lblToolName.Text = currentTool.name;
+			lblToolName.Font = new Font(lblToolName.Font,FontStyle.Bold);
+			panToolProperties.Controls.Add(lblToolName);
+			
+			int currentY = lblToolName.Height;
+			int width = panToolProperties.Width;
+			foreach (IProperty property in currentTool.properties) {
+				// doesn't show invisbles
+				if (property.propertyType == PropertyType.Hidden) {
+					continue;
+				}
+				
+				Label newLabel = new Label();
+				newLabel.Size = new Size(width,SimpConstants.PROPERTY_LABEL_HEIGHT);
+				newLabel.Location = new Point(0,currentY);
+				newLabel.Text = property.name;
+				panToolProperties.Controls.Add(newLabel);
+				currentY += SimpConstants.PROPERTY_LABEL_HEIGHT;
+				
+				currentY += SimpConstants.PROPERTY_GAP_HEIGHT;
+				
+				// generates controls to put inside picture box
+				if (property is ColorProperty) {
+					ColorProperty colorProperty = (ColorProperty)property;
+					PictureBox newPicture = new PictureBox();
+					newPicture.Size = new Size(width - 31,SimpConstants.PROPERTY_FIELD_HEIGHT);
+					newPicture.Location = new Point(0,currentY);
+					newPicture.BackColor = (Color)property.value;
+					newPicture.Click += colorProperty.onInteract;
+					newPicture.Cursor = Cursors.Hand;
+					panToolProperties.Controls.Add(newPicture);
+					Button btnEyedropper = new Button();
+					btnEyedropper.Size = new Size(23,23);
+					btnEyedropper.Location = new Point(width - 27,currentY);
+					btnEyedropper.Click += new EventHandler(btnEyedropper_Click);
+					btnEyedropper.Tag = colorProperty;
+					btnEyedropper.BackColor = (Color)colorProperty.value;
+					btnEyedropper.BackgroundImage = btnEyedropperIcon.BackgroundImage;
+					btnEyedropper.BackgroundImageLayout = ImageLayout.Stretch;
+					panToolProperties.Controls.Add(btnEyedropper);
+				} else if (property is NumericalProperty) {
+					NumericUpDown newNum = new NumericUpDown();
+					NumericalProperty numericalProperty = (NumericalProperty)property;
+					newNum.Size = new Size(width,SimpConstants.PROPERTY_FIELD_HEIGHT);
+					newNum.Location = new Point(0,currentY);
+					newNum.Value = numericalProperty.min;
+					newNum.Minimum = numericalProperty.min;
+					newNum.Maximum = numericalProperty.max;
+					newNum.Value = (int)numericalProperty.value;
+					newNum.ValueChanged += numericalProperty.onInteract;
+					panToolProperties.Controls.Add(newNum);
+				} else if (property is DecimalProperty) {
+					NumericUpDown newNum = new NumericUpDown();
+					DecimalProperty DecimalProperty = (DecimalProperty)property;
+					newNum.Size = new Size(width,SimpConstants.PROPERTY_FIELD_HEIGHT);
+					newNum.Location = new Point(0,currentY);
+					newNum.Value = DecimalProperty.min;
+					newNum.Minimum = DecimalProperty.min;
+					newNum.Maximum = DecimalProperty.max;
+					newNum.Value = (decimal)DecimalProperty.value;
+					newNum.ValueChanged += DecimalProperty.onInteract;
+					panToolProperties.Controls.Add(newNum);
+				} else if (property is ComboProperty) {
+					ComboBox newCombo = new ComboBox();
+					ComboProperty comboProperty = (ComboProperty)property;
+					newCombo.Size = new Size(width,SimpConstants.PROPERTY_FIELD_HEIGHT);
+					newCombo.Location = new Point(0,currentY);
+					foreach (string option in comboProperty.options) {
+						newCombo.Items.Add(option);
+					}
+					newCombo.SelectedItem = comboProperty.value;
+					newCombo.SelectedIndexChanged += comboProperty.onInteract;
+					newCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+					panToolProperties.Controls.Add(newCombo);
+				}
+				currentY += SimpConstants.PROPERTY_FIELD_HEIGHT;
+				
+				currentY += SimpConstants.PROPERTY_SPACER_HEIGHT;
+			}
+			
+			CalculateDimensions();
+			
+			if (!toolsOpen) {
+				toolsOpen = true;
+				UpdateDisplayBox(true,true);
+			}
+		}
+
+		void btnEyedropper_Click(object sender, EventArgs e)
+		{
+			if (currentTool is EyedropperTool) {
+				currentTool = ((EyedropperTool)currentTool).returnToTool;
+			} else {
+				EyedropperTool newTool = new EyedropperTool("Eyedropper","",this,(ColorProperty)((Button)sender).Tag,currentTool);
+				currentTool = newTool;	
+			}
+		}
+		
+		private void HideTool() {
+			leftPadding = SimpConstants.WORKSPACE_LEFT_PADDING;
+			panToolProperties.Visible = false;
+			CalculateDimensions();
+			UpdateDisplayBox(true,true);
+			toolsOpen = false;
+		}
+		
+		#endregion
+		
+		#region action
+		/// <summary>
+		/// Perform an action and record it
+		/// </summary>
+		public void PerformAction(IAction action) {
+			PerformActionSilent(action);
+			RecordAction(action);
+		}
+		
+		public void PerformActionSilent(IAction action) {
+			// perform an action on this workspace
+			action.Do(this);
+		}
+		
+		public void RecordAction(IAction action) {
+			pastActions.Push(action);
+			futureActions.Clear();
+			// cannot redo now - just did a new action
+			btnRedo.Enabled = false;
+			// however can definitely undo
+			btnUndo.Enabled = true;
+		}
+		
+		void BtnUndoClick(object sender, EventArgs e)
+		{
+			IAction lastAction = pastActions.Pop();
+			
+			lastAction.Undo(this);
+			
+			futureActions.Push(lastAction);
+			btnRedo.Enabled = true;
+			
+			if (pastActions.Count == 0) {
+				btnUndo.Enabled = false;
+			}
+			
+			// updates the layers display if needed
+			GenLayersSelector();
+		}
+		
+		void BtnRedoClick(object sender, EventArgs e)
+		{
+			IAction futureAction = futureActions.Pop();
+			
+			futureAction.Do(this);
+			
+			pastActions.Push(futureAction);
+			btnUndo.Enabled = true;
+			
+			if (futureActions.Count == 0) {
+				btnRedo.Enabled = false;
+			}
+			
+			GenLayersSelector();
+		}
+		#endregion
+		
+		#region off bounds image
+		// handles stuff such that if you start a stroke by clicking on the workspace, should still be handled by image
+		void WorkspaceMouseDown(object sender, MouseEventArgs e)
+		{
+			currentTool.HandleMouseDown(null,e.Button);
+		}
+		
+		void WorkspaceMouseUp(object sender, MouseEventArgs e)
+		{
+			currentTool.HandleMouseUp(null,e.Button);
+		}
+		
+		void WorkspaceMouseMove(object sender, MouseEventArgs e)
+		{
+			Rectangle displayRectangle = new Rectangle(displayBox.Location,displayBox.Size);
+			
+			if (displayRectangle.Contains(e.Location)) {
+				Point clickLocation = e.Location;
+				clickLocation.Offset(displayBox.Location.X * -1,
+				                     displayBox.Location.Y * -1);
+				oldLocation = new DisplayPoint(clickLocation.X,clickLocation.Y);
+				DisplayBoxMouseMove(displayBox,new MouseEventArgs(
+					e.Button,
+				    e.Clicks,
+				    clickLocation.X,
+				    clickLocation.Y,
+				    e.Delta)
+				);
+			}
+		}
+		#endregion
+		
+		#region layer display
+		private void GenLayersSelector() {
+			int y=5;
+			panLayerSelector.Controls.Clear();
+			panLayerSelector.Controls.Add(panLayerButtons);
+			previewImages = new Dictionary<Layer, PictureBox>();
+			
+			foreach (Layer layer in image.layers) {
+				Panel layerPanel = new Panel();
+				layerPanel.Location = new Point(5,y);
+				layerPanel.Size = new Size(panLayers.Width-10,50);
+				// makes currently selected layer dark
+				if (layer == image.currentLayer) {
+					layerPanel.BackColor = SystemColors.ControlDark;
+				} else {
+					layerPanel.BackColor = SystemColors.Control;
+				}
+				layerPanel.Tag = layer;
+				layerPanel.Click += new EventHandler(PanLayerClick);
+				
+				// add controls to the new layer
+				// picture box displaying preview
+				PictureBox layerPreview = new PictureBox();
+				layerPreview.Location = new Point(5,5);
+				layerPreview.Size = new Size(40,40);
+				layerPreview.BackColor = Color.White;
+				layerPanel.Controls.Add(layerPreview);
+				previewImages[layer] = layerPreview;
+				
+				// check box showing visible
+				CheckBox visibleBox = new CheckBox();
+				visibleBox.Location = new Point(50,5);
+				visibleBox.Size = new Size(100,20);
+				visibleBox.Text = "Visible?";
+				visibleBox.Checked = layer.visible;
+				visibleBox.Tag = layer;
+				visibleBox.CheckedChanged += new EventHandler(ChkLayerChecked);
+				layerPanel.Controls.Add(visibleBox);
+				
+				panLayerSelector.Controls.Add(layerPanel);
+				y+=55;
+			}
+			
+			UpdateLayersSelector(true);
+			UpdateLayerButtons();
+		}
+		
+		Dictionary<Layer,PictureBox> previewImages;
+		public void UpdateLayersSelector(bool full) {
+			// if requests to update EVERY layer
+			if (full) {
+				foreach (Layer layer in image.layers) {
+					UpdateLayer(layer);
+				}
+			} else { // or just the currently displayed one
+				// this is to save performance as most changes just edit one layer at a time
+				UpdateLayer(image.currentLayer);
+			}
+		}
+		
+		private void UpdateLayerButtons() {
+			btnRemoveLayer.Enabled = image.layers.Count > 1;
+			
+			// disables move layer up button if the current layer is at start of list
+			btnLayerUp.Enabled = image.layers.IndexOf(image.currentLayer) != 0;
+			
+			// disables move layer down button if the current layer is at end of list
+			btnLayerDown.Enabled = image.layers.IndexOf(image.currentLayer) != (image.layers.Count - 1);
+		}
+		
+		private void UpdateLayer(Layer layer) {
+			System.Drawing.Image newImage = new System.Drawing.Bitmap(40,40);
+			Graphics GFX = Graphics.FromImage(newImage);
+			// checks 40 pixels along the image
+			// if actual image is 400 pixels long, it checks every 10
+			// an inexpensive form of compression
+			for (int x = 0; x < 40; x++) {
+				for (int y = 0; y < 40; y++) {
+					int imageX = (x * image.fileWidth) / 40;
+					int imageY = (y * image.fileHeight) / 40;
+					GFX.FillRectangle(layer.pixels[imageX,imageY],x,y,1,1);
+				}
+			}
+			previewImages[layer].Image = newImage;	
+		}
+		
+		void PanLayerClick(object sender, EventArgs e)
+		{
+			// when a panel containing a layer is pressed
+			// the tag of each panel is a reference to its layer
+			image.currentLayer = (Layer)(((Panel)sender).Tag);
+			GenLayersSelector();
+		}
+		
+		void ChkLayerChecked(object sender, EventArgs e) {
+			((Layer)(((CheckBox)sender).Tag)).visible = ((CheckBox)sender).Checked;
+			UpdateDisplayBox(true,true);
+		}
+		
+		void BtnNewLayerClick(object sender, EventArgs e)
+		{
+			Layer newLayer = new Layer(image.fileWidth,image.fileHeight);
+			image.layers.Insert(image.layers.IndexOf(image.currentLayer),newLayer);
+			image.currentLayer = newLayer;
+			
+			GenLayersSelector();
+		}
+		
+		void BtnRemoveLayerClick(object sender, EventArgs e)
+		{
+			image.layers.Remove(image.currentLayer);
+			// changes current layer to just the start of the list
+			image.currentLayer = image.layers[0];
+			
+			GenLayersSelector();
+			UpdateDisplayBox(true,true);
+		}
+		
+		void BtnLayerUpClick(object sender, EventArgs e)
+		{
+			int layerPos = image.layers.IndexOf(image.currentLayer);
+			// remove this layer from the list and insert it one place below
+			image.layers.Remove(image.currentLayer);
+			image.layers.Insert(layerPos-1,image.currentLayer);
+			
+			GenLayersSelector();
+			UpdateDisplayBox(true,true);
+		}
+		
+		void BtnLayerDownClick(object sender, EventArgs e)
+		{
+			int layerPos = image.layers.IndexOf(image.currentLayer);
+			//opposite of layer up
+			image.layers.Remove(image.currentLayer);
+			image.layers.Insert(layerPos+1,image.currentLayer);
+			
+			GenLayersSelector();
+			UpdateDisplayBox(true,true);
+		}
+		#endregion
+		
+		#region saving / loading controls
+		void BtnOpenClick(object sender, EventArgs e)
+		{
+			DialogResult result = diaOpen.ShowDialog();
+			if (result == DialogResult.OK) {
+				using (FileStream stream = new FileStream(diaOpen.FileName,FileMode.Open)) {
+					OpenFile(stream);
+				}
+			}
+		}
+		
+		void BtnSaveClick(object sender, EventArgs e)
+		{
+			// save button for if you have already saved before
+			// _savedPath contains the path you entered when you pressed 'save as'
+			using (FileStream stream = new FileStream(_savedPath,FileMode.OpenOrCreate)) {
+				SaveFile(stream);
+				
+				MessageBox.Show("Saved!","Success!",MessageBoxButtons.OK,MessageBoxIcon.Information);
+			}
+		}
+		
+		void BtnSaveAsClick(object sender, EventArgs e)
+		{
+			DialogResult result = diaSave.ShowDialog();
+			if (result == DialogResult.OK) {
+				using (FileStream stream = new FileStream(diaSave.FileName,FileMode.OpenOrCreate)) {
+					SaveFile(stream);
+					
+					MarkSavedTo(Path.GetFileName(diaSave.FileName),diaSave.FileName);
+					MessageBox.Show("Saved!","Success!",MessageBoxButtons.OK,MessageBoxIcon.Information);
+				}
+			}
+		}
+		
+		void SaveFile(FileStream stream) {
+			//SIMP check digits
+			//format v2 thus SIM2
+			stream.WriteByte((byte)'S');
+			stream.WriteByte((byte)'I');
+			stream.WriteByte((byte)'M');
+			stream.WriteByte((byte)'2');
+				
+			//header
+			stream.WriteByte((byte)(image.fileWidth / 256)); // saves width and height into two bytes
+			stream.WriteByte((byte)(image.fileWidth % 256)); // this is so you can save images larger than 255 in size
+			stream.WriteByte((byte)(image.fileHeight / 256));
+			stream.WriteByte((byte)(image.fileHeight % 256));
+			stream.WriteByte((byte)image.layers.Count); // not much point doing the same for layers - 255 layers is impossible
+			
+			Color currentColor;
+			// now the header stuff is present, write every colour sequentially
+			foreach (Layer layer in image.layers) {
+				for (int x = 0; x < image.fileWidth; x++) {
+					for (int y = 0; y < image.fileHeight; y++) {
+						currentColor = layer.pixels[x,y].Color;
+						stream.WriteByte(currentColor.R);
+						stream.WriteByte(currentColor.G);
+						stream.WriteByte(currentColor.B);
+						stream.WriteByte(currentColor.A);
+					}
+				}
+			}
+		}
+		
+		public static Workspace OpenFile(FileStream stream) {
+			string checkString = "";
+			for (int i = 0; i < 4; i++) {
+				checkString += (char)SafeRead(stream);
+			}
+			int width,height,layerCount,R,G,B,A = 0;
+			Workspace newWorkspace;
+			Image image;
+			List<Layer> newLayers;
+			
+			switch (checkString) {
+				case "SIMP": //simp format v1 loading
+					width = (SafeRead(stream) * 256) + SafeRead(stream);
+					height = (SafeRead(stream) * 256) + SafeRead(stream);
+					layerCount = SafeRead(stream);
+					
+					newWorkspace = new Workspace(width,height);
+					
+					image = new Image(width,height,newWorkspace);
+					newWorkspace.image = image;
+					newLayers = new List<Layer>();
+					
+					for (int i = 0; i < layerCount; i++) {
+						Layer newLayer = new Layer(width,height);
+						for (int x = 0; x < width; x++) {
+							for (int y = 0; y < height; y++) {
+								// reads all the colours off
+								R = SafeRead(stream);
+								G = SafeRead(stream);
+								B = SafeRead(stream);
+								Color newColor = Color.FromArgb(R,G,B);
+								//patches the transparency issue
+								if (newColor.R == 255 &&
+								    newColor.G == 255 &&
+								    newColor.B == 255 &&
+								    newColor.A == 255
+								   ) {
+									newColor = Color.Transparent;
+								}
+								newLayer.pixels[x,y] = new SolidBrush(newColor);
+							}
+						}
+						newLayers.Add(newLayer);
+					}
+					
+					image.layers = newLayers;
+					newWorkspace.image = image;
+					newWorkspace.image.currentLayer = newWorkspace.image.layers[0];
+					
+					newWorkspace.Show();
+					newWorkspace.GenLayersSelector();
+					
+					return newWorkspace;
+					
+				case "SIM2": //simp format v2 loading - transparency is saved along with RGB
+					width = (stream.ReadByte() * 256) + stream.ReadByte();
+					height = (stream.ReadByte() * 256) + stream.ReadByte();
+					layerCount = stream.ReadByte();
+					
+					newWorkspace = new Workspace(width,height);
+					
+					image = new Image(width,height,newWorkspace);
+					newWorkspace.image = image;
+					newLayers = new List<Layer>();
+					
+					for (int i = 0; i < layerCount; i++) {
+						Layer newLayer = new Layer(width,height);
+						for (int x = 0; x < width; x++) {
+							for (int y = 0; y < height; y++) {
+								R = SafeRead(stream);
+								G = SafeRead(stream);
+								B = SafeRead(stream);
+								A = SafeRead(stream);
+								newLayer.pixels[x,y] = new SolidBrush(Color.FromArgb(A,R,G,B));
+							}
+						}
+						newLayers.Add(newLayer);
+					}
+					
+					image.layers = newLayers;
+					newWorkspace.image = image;
+					newWorkspace.image.currentLayer = newWorkspace.image.layers[0];
+					
+					newWorkspace.Show();
+					newWorkspace.GenLayersSelector();
+					
+					return newWorkspace;
+					
+				default: // if no valid SIMP header found
+					MessageBox.Show("File cannot be loaded. \n\nSIMP data could not be found within this file.","Loading Error",MessageBoxButtons.OK,MessageBoxIcon.Error);
+					return null;
+			}
+		}
+		
+		void BtnImportClick(object sender, EventArgs e)
+		{
+			DialogResult result = diaImport.ShowDialog();
+			if (result == DialogResult.OK) {
+				Bitmap file = new Bitmap(diaImport.FileName);
+				Layer newLayer = new Layer(image.fileWidth,image.fileHeight);
+				
+				for (int x = 0; x < image.fileWidth; x++) {
+					for (int y = 0; y < image.fileHeight; y++) {
+						int imageX = (x * file.Width) / image.fileWidth;
+						int imageY = (y * file.Height) / image.fileHeight;
+						newLayer.pixels[x,y] = new SolidBrush(file.GetPixel(imageX,imageY));
+					}
+				}
+				
+				image.layers.Insert(0,newLayer);
+				image.currentLayer = newLayer;
+				
+				this.GenLayersSelector();
+				this.UpdateDisplayBox(true,true);
+			}
+		}
+		
+		void BtnExportClick(object sender, EventArgs e)
+		{
+			DialogResult result = diaExport.ShowDialog();
+			int tempZoom = image.zoomSettings.zoom;
+			// zoom is temporarily changed to 1 so image is exported not zoomed in
+			image.zoomSettings.zoom = 1;
+			if (result == DialogResult.OK) {
+				// requests a display image from the image class
+				System.Drawing.Image saveImage = image.GetDisplayImage(image.fileWidth,image.fileHeight,true);
+				// in-built saving function - System.Drawing.Image#Save
+				saveImage.Save(diaExport.FileName);
+				image.zoomSettings.zoom = tempZoom;
+				MessageBox.Show("Exported!","Success!",MessageBoxButtons.OK,MessageBoxIcon.Information);
+			}
+		}
+		
+		private static int SafeRead(FileStream stream) {
+			int result = stream.ReadByte();
+			if (result == -1) {
+				// throws a catchable error if -1 is returned
+				throw new EndOfStreamException();
+			} else {
+				return result;
+			}
+		}
+		
+		// when 'save as' executes successfully
+		// enabled the needed buttons and changes form name
+		public void MarkSavedTo(string name, string path) {
+			savedName = name;
+			_savedPath = path;
+			savedOnDisk = true;
+			
+			this.Text = savedName;
+			this.btnSave.Enabled = true;
+		}
+		#endregion
+	}
+}
