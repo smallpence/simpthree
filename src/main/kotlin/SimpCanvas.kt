@@ -14,6 +14,10 @@ import styled.styledCanvas
 
 class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
     var penDown: Boolean = false
+    val scale: Int
+    get() {
+        return props.displaySize.width / props.fileSize.width
+    }
 
     override fun RBuilder.render() {
         div {
@@ -61,7 +65,14 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
                             x = (event.clientX as Int) - rect.left.toInt()
                             y = (event.clientY as Int) - rect.top.toInt()
 
-                            val displayPoint = DisplayPoint(x,y)
+                            val displayPoint = DisplayPoint(state.x,state.y)
+                            val filePoint = this@SimpCanvas.displayPointToFilePoint(displayPoint)
+
+                            if (penDown) {
+                                val ctx = target.getContext("2d") as CanvasRenderingContext2D
+
+                                ctx.fillRect(filePoint.x.toDouble(),filePoint.y.toDouble(),1.0,1.0)
+                            }
                         }
                     }
                 }
@@ -73,6 +84,8 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
         }
     }
 }
+
+
 
 fun <T : HTMLElement,E : SyntheticEvent<T>> disectEvent(event: Event, handler: TargetAndEvent<T,E>.() -> Unit) {
     handler(TargetAndEvent(
