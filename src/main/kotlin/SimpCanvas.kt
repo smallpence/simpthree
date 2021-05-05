@@ -1,4 +1,14 @@
+import com.ccfraser.muirwik.components.*
+import com.ccfraser.muirwik.components.button.MButtonVariant
+import com.ccfraser.muirwik.components.button.mButton
+import com.ccfraser.muirwik.components.button.mButtonGroup
+import com.ccfraser.muirwik.components.button.mIconButton
+import com.ccfraser.muirwik.components.card.*
+import com.ccfraser.muirwik.components.form.mFormLabel
+import com.ccfraser.muirwik.components.transitions.mCollapse
+import kotlinx.browser.window
 import kotlinx.css.*
+import kotlinx.css.properties.*
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onMouseDownFunction
 import kotlinx.html.js.onMouseMoveFunction
@@ -11,29 +21,27 @@ import react.*
 import react.dom.div
 import styled.css
 import styled.styledCanvas
+import styled.styledDiv
 
 class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
     var penDown: Boolean = false
+    private var expanded = false
     val scale: Int
     get() {
         return props.displaySize.width / props.fileSize.width
     }
 
     override fun RBuilder.render() {
-        div {
-            + "x: ${state.x} y: ${state.y}"
-        }
-
         styledCanvas {
             css {
-                width = props.displaySize.width.px
-                height = props.displaySize.height.px
+//                width = props.displaySize.width.px
+//                height = props.displaySize.height.px
+                width = LinearDimension.auto
+                height = 100.vh
                 border = "1px solid #000000"
-                backgroundColor = Color.white
+                backgroundColor = Color.yellow
                 put("image-rendering","pixelated")
                 put("image-rendering","-moz-crisp-edges")
-                padding = "0"
-                margin = "0"
             }
 
             attrs {
@@ -77,10 +85,6 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
                     }
                 }
             }
-        }
-
-        div {
-            + "x: ${state.x} y: ${state.y}"
         }
     }
 }
