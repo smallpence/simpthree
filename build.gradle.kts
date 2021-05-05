@@ -25,6 +25,10 @@ kotlin {
 }
 
 dependencies {
+    val kotlinVersion = "1.4.21"
+    val muirwikComponentVersion = "0.6.3"
+    val kotlinJsVersion = "pre.129-kotlin-$kotlinVersion"
+
     testImplementation(kotlin("test-junit"))
 
     //React, React DOM + Wrappers (chapter 3)
@@ -37,4 +41,6 @@ dependencies {
     implementation(npm("react-dom", "17.0.1"))
     implementation(npm("styled-components", "~5.2.1"))
 
+    // material
+    implementation("com.ccfraser.muirwik:muirwik-components:$muirwikComponentVersion")
 }
