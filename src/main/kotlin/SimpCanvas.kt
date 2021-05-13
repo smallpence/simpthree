@@ -28,7 +28,7 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
     private var expanded = false
     val scale: Int
     get() {
-        return props.displaySize.width / props.fileSize.width
+        return props.fileSize.width
     }
 
     override fun RBuilder.render() {
@@ -36,9 +36,9 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
             css {
 //                width = props.displaySize.width.px
 //                height = props.displaySize.height.px
-                width = LinearDimension.auto
-                height = 100.vh
-                border = "1px solid #000000"
+//                width = 100.pct
+                height = 100.pct
+//                border = "1px solid #000000"
                 backgroundColor = Color.yellow
                 put("image-rendering","pixelated")
                 put("image-rendering","-moz-crisp-edges")
@@ -105,7 +105,6 @@ data class TargetAndEvent<T : HTMLElement,E : SyntheticEvent<T>> (
 
 external interface SimpCanvasProps : RProps {
     var fileSize: FileSize
-    var displaySize: DisplaySize
 }
 
 external interface SimpCanvasState : RState {
