@@ -1,35 +1,26 @@
-import com.ccfraser.muirwik.components.*
-import com.ccfraser.muirwik.components.button.MButtonVariant
-import com.ccfraser.muirwik.components.button.mButton
-import com.ccfraser.muirwik.components.button.mButtonGroup
-import com.ccfraser.muirwik.components.button.mIconButton
-import com.ccfraser.muirwik.components.card.*
-import com.ccfraser.muirwik.components.form.mFormLabel
-import com.ccfraser.muirwik.components.transitions.mCollapse
-import kotlinx.browser.window
 import kotlinx.css.*
-import kotlinx.css.properties.*
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.js.onMouseDownFunction
-import kotlinx.html.js.onMouseMoveFunction
-import kotlinx.html.js.onMouseUpFunction
+import kotlinx.html.js.*
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import react.*
-import react.dom.div
+import react.dom.findDOMNode
 import styled.css
 import styled.styledCanvas
-import styled.styledDiv
 
 class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
     var penDown: Boolean = false
     private var expanded = false
-    val scale: Int
-    get() {
-        return props.fileSize.width
+    val element: HTMLCanvasElement by kotlin.lazy {
+        findDOMNode(this) as HTMLCanvasElement
     }
+
+    val scale: Double
+    get() {
+        return element.getBoundingClientRect().height / props.fileSize.width
+    }
+
 
     override fun RBuilder.render() {
         styledCanvas {
@@ -48,17 +39,18 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
                 width = "${props.fileSize.width}px"
                 height = "${props.fileSize.height}px"
 
-                onClickFunction = {
-                    val canvas:HTMLCanvasElement = it.target.unsafeCast<HTMLCanvasElement>()
-                    val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
-
-                    ctx.moveTo(0.0,0.0)
-                    ctx.lineTo(props.fileSize.width.toDouble(), props.fileSize.height.toDouble())
-                    ctx.stroke()
-                }
-
                 onMouseDownFunction = {
                     penDown = true
+                    disectEvent<HTMLCanvasElement,MouseEvent<HTMLCanvasElement>>(it) {
+                        val rect = target.getBoundingClientRect()
+
+                        setState {
+                            dLast = DisplayPoint(
+                                (event.clientX as Int) - rect.left.toInt(),
+                                (event.clientY as Int) - rect.top.toInt()
+                            )
+                        }
+                    }
                 }
 
                 onMouseUpFunction = {
@@ -69,17 +61,29 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
                     disectEvent<HTMLCanvasElement,MouseEvent<HTMLCanvasElement>>(it) {
                         val rect = target.getBoundingClientRect()
 
-                        setState {
-                            x = (event.clientX as Int) - rect.left.toInt()
-                            y = (event.clientY as Int) - rect.top.toInt()
+                        if (penDown) {
+                            val dCurrent = DisplayPoint((event.clientX as Int) - rect.left.toInt(),(event.clientY as Int) - rect.top.toInt())
 
-                            val displayPoint = DisplayPoint(state.x,state.y)
-                            val filePoint = this@SimpCanvas.displayPointToFilePoint(displayPoint)
+                            val fLast = displayPointToFilePoint(state.dLast)
+                            val fCurrent = displayPointToFilePoint(dCurrent)
 
-                            if (penDown) {
-                                val ctx = target.getContext("2d") as CanvasRenderingContext2D
+                            val ctx = target.getContext("2d") as CanvasRenderingContext2D
 
-                                ctx.fillRect(filePoint.x.toDouble(),filePoint.y.toDouble(),1.0,1.0)
+                            ctx.imageSmoothingEnabled = false
+
+                            ctx.translate(0.5,0.5)
+                            ctx.strokeStyle = "#FF0000"
+                            ctx.beginPath()
+                            ctx.moveTo(fLast.x,fLast.y)
+                            ctx.lineTo(fCurrent.x,fCurrent.y)
+                            ctx.stroke()
+                            ctx.translate(-0.5,-0.5)
+
+                            setState {
+                                dLast = DisplayPoint(
+                                    (event.clientX as Int) - rect.left.toInt(),
+                                    (event.clientY as Int) - rect.top.toInt()
+                                )
                             }
                         }
                     }
@@ -108,8 +112,7 @@ external interface SimpCanvasProps : RProps {
 }
 
 external interface SimpCanvasState : RState {
-    var x: Int
-    var y: Int
+    var dLast: DisplayPoint
 }
 
 fun RBuilder.simpCanvas(handler: SimpCanvasProps.() -> Unit): ReactElement {

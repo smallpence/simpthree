@@ -14,7 +14,7 @@ data class DisplayPoint (
 )
 
 fun SimpCanvas.displayPointToFilePoint(displayPoint: DisplayPoint): FilePoint {
-    return FilePoint(displayPoint.x / scale, displayPoint.y / scale)
+    return FilePoint((displayPoint.x / scale).toInt(), (displayPoint.y / scale).toInt())
 }
 
 data class FilePoint (
@@ -22,7 +22,7 @@ data class FilePoint (
     val y: Int
 )
 
-fun SimpCanvas.filePointToDisplayPoint(filePoint: FilePoint): DisplayPoint {
-    return DisplayPoint(filePoint.x * scale, filePoint.y * scale)
-}
+//fun SimpCanvas.filePointToDisplayPoint(filePoint: FilePoint): DisplayPoint {
+//    return DisplayPoint(filePoint.x * scale, filePoint.y * scale)
+//}
 
