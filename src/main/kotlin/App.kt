@@ -19,7 +19,7 @@ class App : RComponent<RProps, RState>() {
                 gridTemplateRows = GridTemplateRows(50.px, LinearDimension.auto)
                 gridTemplateColumns = GridTemplateColumns.auto
                 height = 100.vh
-                overflow = Overflow.hidden
+//                overflow = Overflow.hidden
             }
             styledDiv {
                 css {
@@ -38,9 +38,8 @@ class App : RComponent<RProps, RState>() {
                 css {
                     gridRow = GridRow("2")
                     gridColumn = GridColumn("1")
-                    backgroundColor = Color.red
                 }
-                simpCanvas {
+                simpEditor {
                     fileSize = FileSize(100,100)
                 }
             }

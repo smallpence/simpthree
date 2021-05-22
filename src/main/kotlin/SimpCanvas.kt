@@ -21,16 +21,17 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
         return element.getBoundingClientRect().height / props.fileSize.width
     }
 
+    // canvas init
+    override fun componentDidMount() {
+        val ctx = element.getContext("2d") as CanvasRenderingContext2D
+        ctx.strokeStyle = "#FF0000"
+        ctx.translate(0.5,0.5)
+    }
 
     override fun RBuilder.render() {
         styledCanvas {
             css {
-//                width = props.displaySize.width.px
-//                height = props.displaySize.height.px
-//                width = 100.pct
                 height = 100.pct
-//                border = "1px solid #000000"
-                backgroundColor = Color.yellow
                 put("image-rendering","pixelated")
                 put("image-rendering","-moz-crisp-edges")
             }
@@ -69,15 +70,10 @@ class SimpCanvas : RComponent<SimpCanvasProps, SimpCanvasState>() {
 
                             val ctx = target.getContext("2d") as CanvasRenderingContext2D
 
-                            ctx.imageSmoothingEnabled = false
-
-                            ctx.translate(0.5,0.5)
-                            ctx.strokeStyle = "#FF0000"
                             ctx.beginPath()
                             ctx.moveTo(fLast.x,fLast.y)
                             ctx.lineTo(fCurrent.x,fCurrent.y)
                             ctx.stroke()
-                            ctx.translate(-0.5,-0.5)
 
                             setState {
                                 dLast = DisplayPoint(
