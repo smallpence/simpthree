@@ -30,12 +30,13 @@ class SimpEditor : RComponent<SimpEditorProps, RState>() {
             }
             scrollBar {
                 horizontal = false
+                range = 50
+                length = 10
             }
             scrollBar {
-//                css {
-//                    put("grid-area","vertslider")
-//                }
                 horizontal = true
+                range = 50
+                length = 10
             }
         }
 

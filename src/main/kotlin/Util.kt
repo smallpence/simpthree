@@ -7,3 +7,9 @@ fun CanvasRenderingContext2D.moveTo(x: Int, y: Int) {
 fun CanvasRenderingContext2D.lineTo(x: Int, y: Int) {
     lineTo(x.toDouble(), y.toDouble())
 }
+
+fun IntRange.clamp(x: Int) = when {
+    x < first -> first
+    x > last  -> last
+    else      -> x
+}
