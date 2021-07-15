@@ -103,16 +103,18 @@ class Scrollbar : RComponent<ScrollbarProps, ScrollbarState>() {
 }
 
 external interface ScrollbarProps : RProps {
-    var horizontal: Boolean
-    var range: Int
-    var length: Int
-    var pos: Int
+    var horizontal: Boolean // whether bar is horizontal (else vertical)
+    var range: Int // range of bar
+    var length: Int // length of bar
+
+    var onUpdate: (Int) -> Unit
 }
 
 external interface ScrollbarState: RState {
     var cursorOffset: Int?
     var buttonOffset: Int?
     var mouseDown: Boolean
+    var pos: Int
 }
 
 fun RBuilder.scrollBar(handler: ScrollbarProps.() -> Unit): ReactElement {
